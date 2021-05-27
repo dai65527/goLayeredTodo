@@ -26,7 +26,7 @@ func (repo itemSqlRepository) Save(item model.Item) (model.Item, error) {
 }
 
 func (repo itemSqlRepository) GetAll() ([]model.Item, error) {
-	rows, err := repo.db.Query(("SELECT id, name, done FROM ITEMS"))
+	rows, err := repo.db.Query(("SELECT id, name, done FROM items"))
 	if err != nil {
 		return nil, err
 	}

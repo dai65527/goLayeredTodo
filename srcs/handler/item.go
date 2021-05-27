@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"todoapi/usecase"
@@ -22,7 +24,21 @@ type itemHandler struct {
 }
 
 func (handler itemHandler) HandleAll(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "<h1>itemHandler</h1>")
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000") // localhost:3000からのオリジン間アクセスを許可する
+
+	switch r.Method {
+	case "GET":
+		getAllItems(w, r, handler.usecase) // 全てのitemの取得
+	// case "POST":
+	// 	addNewItem(w, r) // 新しいitemの追加
+	// case "DELETE":
+	// 	deleteDoneItems(w) // 実行済みitemの削除
+	case "OPTIONS":
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")               // Content-Typeヘッダの使用を許可する
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS") // pre-flightリクエストに対応する
+	default:
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	}
 }
 
 func (handler itemHandler) HandleOne(w http.ResponseWriter, r *http.Request) {
@@ -33,4 +49,23 @@ func (handler itemHandler) HandleOne(w http.ResponseWriter, r *http.Request) {
 	}
 	id := params[1]
 	fmt.Fprintf(w, "<h1>%s</h1>", id)
+}
+
+func getAllItems(w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
+	items, err := usecase.GetAll()
+	fmt.Println("err", err)
+	fmt.Println("items", items)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	if err := enc.Encode(items); err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, buf.String())
 }
