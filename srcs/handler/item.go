@@ -29,8 +29,8 @@ func (handler itemHandler) HandleAll(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		getAllItems(w, r, handler.usecase) // 全てのitemの取得
-	// case "POST":
-	// 	addNewItem(w, r) // 新しいitemの追加
+	case "POST":
+		addNewItem(w, r, handler.usecase) // 新しいitemの追加
 	// case "DELETE":
 	// 	deleteDoneItems(w) // 実行済みitemの削除
 	case "OPTIONS":
@@ -53,8 +53,6 @@ func (handler itemHandler) HandleOne(w http.ResponseWriter, r *http.Request) {
 
 func getAllItems(w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
 	items, err := usecase.GetAll()
-	fmt.Println("err", err)
-	fmt.Println("items", items)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
@@ -68,4 +66,22 @@ func getAllItems(w http.ResponseWriter, r *http.Request, usecase usecase.ItemUse
 	}
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, buf.String())
+}
+
+func addNewItem(w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
+	var reqBody struct {
+		Name string `json:"name"`
+	}
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&reqBody)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	err = usecase.AddItem(reqBody.Name)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
