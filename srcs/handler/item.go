@@ -145,7 +145,7 @@ func doneItem(id model.ID, w http.ResponseWriter, r *http.Request, usecase useca
 }
 
 func unDoneItem(id model.ID, w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
-	err := usecase.Done(id)
+	err := usecase.UnDone(id)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
