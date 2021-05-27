@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"todoapi/domain/repository"
 	"todoapi/handler"
 	"todoapi/infra/persistence"
 	"todoapi/usecase"
@@ -23,13 +24,24 @@ func main() {
 	}
 
 	log.Print("Connecting db...")
-	db, err := persistence.InitDB()
-	if err != nil {
-		log.Fatal(err)
+
+	var itemRepository repository.ItemRepository
+	if os.Getenv("DB_MONGO") == "on" {
+		log.Println("connecting to mongoDB...")
+		db, err := persistence.InitMongo()
+		if err != nil {
+			log.Fatal(err)
+		}
+		itemRepository = persistence.NewItemMongoRepository(db)
+	} else {
+		db, err := persistence.InitDB()
+		if err != nil {
+			log.Fatal(err)
+		}
+		itemRepository = persistence.NewItemSqlRepository(db)
 	}
 	log.Print("DB ready!!")
 
-	itemRepository := persistence.NewItemSqlRepository(db)
 	itemUseCase := usecase.NewItemUseCase(itemRepository)
 	itemHandler := handler.NewItemHandler(itemUseCase)
 
