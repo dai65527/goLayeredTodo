@@ -10,6 +10,7 @@ type ItemUseCase interface {
 	GetAll() ([]model.Item, error)
 	Done(id model.ID) error
 	UnDone(id model.ID) error
+	DeleteDone() error
 }
 
 type itemUseCase struct {
@@ -29,6 +30,10 @@ func (usecase itemUseCase) AddItem(name string) error {
 
 func (usecase itemUseCase) GetAll() ([]model.Item, error) {
 	return usecase.repository.GetAll()
+}
+
+func (usecase itemUseCase) DeleteDone() error {
+	return usecase.repository.DeleteDone()
 }
 
 func (usecase itemUseCase) Done(id model.ID) error {

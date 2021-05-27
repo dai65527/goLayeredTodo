@@ -31,8 +31,8 @@ func (handler itemHandler) HandleAll(w http.ResponseWriter, r *http.Request) {
 		getAllItems(w, r, handler.usecase) // 全てのitemの取得
 	case "POST":
 		addNewItem(w, r, handler.usecase) // 新しいitemの追加
-	// case "DELETE":
-	// 	deleteDoneItems(w) // 実行済みitemの削除
+	case "DELETE":
+		deleteDoneItems(w, r, handler.usecase) // 実行済みitemの削除
 	case "OPTIONS":
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")               // Content-Typeヘッダの使用を許可する
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS") // pre-flightリクエストに対応する
@@ -79,6 +79,15 @@ func addNewItem(w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseC
 		return
 	}
 	err = usecase.AddItem(reqBody.Name)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func deleteDoneItems(w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
+	err := usecase.DeleteDone()
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
