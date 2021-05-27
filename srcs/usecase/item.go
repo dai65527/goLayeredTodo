@@ -11,6 +11,7 @@ type ItemUseCase interface {
 	Done(id model.ID) error
 	UnDone(id model.ID) error
 	DeleteDone() error
+	Delete(id model.ID) error
 }
 
 type itemUseCase struct {
@@ -34,6 +35,10 @@ func (usecase itemUseCase) GetAll() ([]model.Item, error) {
 
 func (usecase itemUseCase) DeleteDone() error {
 	return usecase.repository.DeleteDone()
+}
+
+func (usecase itemUseCase) Delete(id model.ID) error {
+	return usecase.repository.DeleteById(id)
 }
 
 func (usecase itemUseCase) Done(id model.ID) error {

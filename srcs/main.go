@@ -17,7 +17,7 @@ import (
 
 func main() {
 	// server config
-	addr := "0.0.0.0:8000"
+	addr := "0.0.0.0:4000"
 	server := &http.Server{
 		Addr: addr,
 	}

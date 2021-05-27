@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"todoapi/domain/model"
 	"todoapi/usecase"
 )
 
@@ -24,7 +25,7 @@ type itemHandler struct {
 }
 
 func (handler itemHandler) HandleAll(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000") // localhost:3000からのオリジン間アクセスを許可する
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	switch r.Method {
 	case "GET":
@@ -42,13 +43,43 @@ func (handler itemHandler) HandleAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handler itemHandler) HandleOne(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// ルートパラメータの取得（例: `/items/1/done` -> ["items", "1", "done"]）
 	params := getRouteParams(r)
-	if len(params) != 3 || params[2] != "done" {
+	if len(params) == 2 {
+		updateItem(params[1], w, r, handler.usecase)
+	} else if len(params) == 3 && params[2] == "done" {
+		updateDone(params[1], w, r, handler.usecase)
+	} else {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
 	}
-	id := params[1]
-	fmt.Fprintf(w, "<h1>%s</h1>", id)
+}
+
+func updateItem(id model.ID, w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
+	switch r.Method {
+	case "DELETE":
+		deleteItem(id, w, r, usecase)
+	case "OPTIONS":
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")    // Content-Typeヘッダの使用を許可する
+		w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS") // pre-flightリクエストに対応する
+	default:
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	}
+}
+
+func updateDone(id model.ID, w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
+	switch r.Method {
+	case "PUT":
+		doneItem(id, w, r, usecase)
+	case "DELETE":
+		unDoneItem(id, w, r, usecase)
+	case "OPTIONS":
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")         // Content-Typeヘッダの使用を許可する
+		w.Header().Set("Access-Control-Allow-Methods", "PUT, DELETE, OPTIONS") // pre-flightリクエストに対応する
+	default:
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	}
 }
 
 func getAllItems(w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
@@ -88,6 +119,33 @@ func addNewItem(w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseC
 
 func deleteDoneItems(w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
 	err := usecase.DeleteDone()
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func deleteItem(id model.ID, w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
+	err := usecase.Delete(id)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func doneItem(id model.ID, w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
+	err := usecase.Done(id)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func unDoneItem(id model.ID, w http.ResponseWriter, r *http.Request, usecase usecase.ItemUseCase) {
+	err := usecase.Done(id)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
