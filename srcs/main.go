@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"todoapi/handler"
 	"todoapi/infra/persistence"
 	"todoapi/usecase"
@@ -13,7 +14,10 @@ import (
 
 func main() {
 	// server config
-	addr := "0.0.0.0:4000"
+	addr := os.Getenv("API_HOST")
+	if os.Getenv("API_HOST") == "" {
+		addr = "0.0.0.0:4000"
+	}
 	server := &http.Server{
 		Addr: addr,
 	}
